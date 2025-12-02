@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Desconto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-calcular {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-calcular:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-limpar {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-limpar:hover {
+            background: #e0e0e0;
+        }
+
+        .resultado {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .resultado.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .resultado h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .resultado-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .resultado-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .resultado-label {
+            color: #555;
+        }
+
+        .resultado-valor {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .erro {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .lucro-positivo {
+            color: #27ae60 !important;
+        }
+
+        .lucro-negativo {
+            color: #e74c3c !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Calculadora de Desconto</h1>
+        <p class="subtitle">Calcule o valor final da sua peça de roupa</p>
+
+        <div class="input-group">
+            <label for="tipoPeca">Tipo de Peça</label>
+            <select id="tipoPeca" onchange="atualizarCusto()">
+                <option value="0">Selecione o tipo</option>
+                <option value="54.75">Camisa - R$ 54,75</option>
+                <option value="69.75">Gola Polo - R$ 69,75</option>
+                <option value="64.75">Short Linho - R$ 64,75</option>
+                <option value="67.75">Camisa Zara - R$ 67,75</option>
+                <option value="56.75">Short Peruano - R$ 56,75</option>
+            </select>
+        </div>
+
+        <div class="input-group" id="custoDisplay" style="display: none;">
+            <label>Custo da Peça</label>
+            <div style="padding: 12px 15px; background: #f0f8ff; border: 2px solid #667eea; border-radius: 10px; font-weight: 600; color: #667eea;">
+                <span id="custoValor">R$ 0,00</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="preco">Preço Original (R$)</label>
+            <input type="number" id="preco" placeholder="Ex: 100.00" step="0.01" min="0">
+            <span class="erro" id="erroPreco">Por favor, insira um preço válido</span>
+        </div>
+
+        <div class="input-group">
+            <label for="desconto">Desconto (%)</label>
+            <input type="number" id="desconto" placeholder="Ex: 20" step="0.01" min="0" max="100">
+            <span class="erro" id="erroDesconto">Por favor, insira um desconto entre 0 e 100%</span>
+        </div>
+
+        <div class="input-group">
+            <label for="quantidade">Quantidade de Peças</label>
+            <input type="number" id="quantidade" placeholder="Ex: 1" step="1" min="1" value="1">
+        </div>
+
+        <div class="input-group">
+            <label for="parcelas">Parcelamento (vezes)</label>
+            <input type="number" id="parcelas" placeholder="Ex: 3" step="1" min="1" max="12" value="1">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-calcular" onclick="calcular()">Calcular</button>
+            <button class="btn-limpar" onclick="limpar()">Limpar</button>
+        </div>
+
+        <div class="resultado" id="resultado">
+            <h2>📊 Resultado</h2>
+            <div class="resultado-item">
+                <span class="resultado-label">Preço Original:</span>
+                <span class="resultado-valor" id="precoOriginal">R$ 0,00</span>
+            </div>
+            <div class="resultado-item">
+                <span class="resultado-label">Desconto:</span>
+                <span class="resultado-valor" id="percentualDesconto">0%</span>
+            </div>
+            <div class="resultado-item">
+                <span class="resultado-label">Valor do Desconto:</span>
+                <span class="resultado-valor" id="valorDesconto">R$ 0,00</span>
+            </div>
+            <div class="resultado-item">
+                <span class="resultado-label">Preço Final (unitário):</span>
+                <span class="resultado-valor" id="precoFinal">R$ 0,00</span>
+            </div>
+            <div class="resultado-item" id="totalGeral" style="display: none;">
+                <span class="resultado-label">Total Geral:</span>
+                <span class="resultado-valor" id="valorTotalGeral">R$ 0,00</span>
+            </div>
+            <div class="resultado-item" id="lucroInfo" style="display: none;">
+                <span class="resultado-label">Lucro por Peça:</span>
+                <span class="resultado-valor" id="valorLucro">R$ 0,00</span>
+            </div>
+            <div class="resultado-item" id="margemInfo" style="display: none;">
+                <span class="resultado-label">Margem de Lucro:</span>
+                <span class="resultado-valor" id="percentualMargem">0%</span>
+            </div>
+            <div class="resultado-item" id="parcelamentoInfo" style="display: none;">
+                <span class="resultado-label">Parcelas:</span>
+                <span class="resultado-valor" id="valorParcela">12x de R$ 0,00</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function formatarMoeda(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function atualizarCusto() {
+            const tipoPeca = document.getElementById('tipoPeca');
+            const custoDisplay = document.getElementById('custoDisplay');
+            const custoValor = document.getElementById('custoValor');
+            const custo = parseFloat(tipoPeca.value);
+
+            if (custo > 0) {
+                custoDisplay.style.display = 'block';
+                custoValor.textContent = formatarMoeda(custo);
+            } else {
+                custoDisplay.style.display = 'none';
+            }
+        }
+
+        function calcular() {
+            const tipoPecaInput = document.getElementById('tipoPeca');
+            const precoInput = document.getElementById('preco');
+            const descontoInput = document.getElementById('desconto');
+            const quantidadeInput = document.getElementById('quantidade');
+            const parcelasInput = document.getElementById('parcelas');
+            const erroPreco = document.getElementById('erroPreco');
+            const erroDesconto = document.getElementById('erroDesconto');
+            
+            erroPreco.style.display = 'none';
+            erroDesconto.style.display = 'none';
+
+            const custo = parseFloat(tipoPecaInput.value) || 0;
+            const preco = parseFloat(precoInput.value);
+            const desconto = parseFloat(descontoInput.value);
+            const quantidade = parseInt(quantidadeInput.value) || 1;
+            const parcelas = parseInt(parcelasInput.value) || 1;
+
+            let valido = true;
+
+            if (isNaN(preco) || preco <= 0) {
+                erroPreco.style.display = 'block';
+                valido = false;
+            }
+
+            if (isNaN(desconto) || desconto < 0 || desconto > 100) {
+                erroDesconto.style.display = 'block';
+                valido = false;
+            }
+
+            if (!valido) return;
+
+            const valorDesconto = (preco * desconto) / 100;
+            const precoFinal = preco - valorDesconto;
+            const totalGeral = precoFinal * quantidade;
+            const valorParcela = totalGeral / parcelas;
+
+            document.getElementById('precoOriginal').textContent = formatarMoeda(preco);
+            document.getElementById('percentualDesconto').textContent = desconto.toFixed(2) + '%';
+            document.getElementById('valorDesconto').textContent = formatarMoeda(valorDesconto);
+            document.getElementById('precoFinal').textContent = formatarMoeda(precoFinal);
+
+            // Total geral
+            if (quantidade > 1) {
+                document.getElementById('totalGeral').style.display = 'flex';
+                document.getElementById('valorTotalGeral').textContent = `${quantidade} peças = ${formatarMoeda(totalGeral)}`;
+            } else {
+                document.getElementById('totalGeral').style.display = 'none';
+            }
+
+            // Cálculo de lucro
+            if (custo > 0) {
+                const lucro = precoFinal - custo;
+                const margemLucro = ((lucro / custo) * 100);
+                const lucroTotal = lucro * quantidade;
+                
+                document.getElementById('lucroInfo').style.display = 'flex';
+                document.getElementById('margemInfo').style.display = 'flex';
+                
+                const lucroElemento = document.getElementById('valorLucro');
+                const margemElemento = document.getElementById('percentualMargem');
+                
+                if (quantidade > 1) {
+                    lucroElemento.textContent = `${formatarMoeda(lucro)} (Total: ${formatarMoeda(lucroTotal)})`;
+                } else {
+                    lucroElemento.textContent = formatarMoeda(lucro);
+                }
+                
+                margemElemento.textContent = margemLucro.toFixed(2) + '%';
+                
+                if (lucro >= 0) {
+                    lucroElemento.className = 'resultado-valor lucro-positivo';
+                    margemElemento.className = 'resultado-valor lucro-positivo';
+                } else {
+                    lucroElemento.className = 'resultado-valor lucro-negativo';
+                    margemElemento.className = 'resultado-valor lucro-negativo';
+                }
+            } else {
+                document.getElementById('lucroInfo').style.display = 'none';
+                document.getElementById('margemInfo').style.display = 'none';
+            }
+
+            // Parcelamento
+            if (parcelas > 1) {
+                document.getElementById('parcelamentoInfo').style.display = 'flex';
+                document.getElementById('valorParcela').textContent = `${parcelas}x de ${formatarMoeda(valorParcela)}`;
+            } else {
+                document.getElementById('parcelamentoInfo').style.display = 'none';
+            }
+
+            document.getElementById('resultado').classList.add('show');
+        }
+
+        function limpar() {
+            document.getElementById('tipoPeca').value = '0';
+            document.getElementById('custoDisplay').style.display = 'none';
+            document.getElementById('preco').value = '';
+            document.getElementById('desconto').value = '';
+            document.getElementById('quantidade').value = '1';
+            document.getElementById('parcelas').value = '1';
+            document.getElementById('resultado').classList.remove('show');
+            document.getElementById('erroPreco').style.display = 'none';
+            document.getElementById('erroDesconto').style.display = 'none';
+        }
+
+        document.getElementById('preco').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calcular();
+        });
+
+        document.getElementById('desconto').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calcular();
+        });
+    </script>
+</body>
+</html>
