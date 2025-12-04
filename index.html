@@ -112,6 +112,19 @@
             background: #e0e0e0;
         }
 
+        .btn-adicionar {
+            width: 100%;
+            background: #27ae60;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-adicionar:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+
         .resultado {
             margin-top: 30px;
             padding: 25px;
@@ -180,6 +193,60 @@
         .lucro-negativo {
             color: #e74c3c !important;
         }
+
+        .peca-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .peca-info {
+            flex: 1;
+        }
+
+        .peca-nome {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .peca-detalhes {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .btn-remover {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-remover:hover {
+            background: #c0392b;
+        }
+
+        #listaPecas {
+            margin-bottom: 20px;
+        }
+
+        .lista-vazia {
+            text-align: center;
+            color: #999;
+            padding: 15px;
+            font-style: italic;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -213,14 +280,18 @@
         </div>
 
         <div class="input-group">
-            <label for="desconto">Desconto (%)</label>
-            <input type="number" id="desconto" placeholder="Ex: 20" step="0.01" min="0" max="100">
-            <span class="erro" id="erroDesconto">Por favor, insira um desconto entre 0 e 100%</span>
-        </div>
-
-        <div class="input-group">
             <label for="quantidade">Quantidade de Peças</label>
             <input type="number" id="quantidade" placeholder="Ex: 1" step="1" min="1" value="1">
+        </div>
+
+        <button class="btn-adicionar" onclick="adicionarPeca()">➕ Adicionar Peça ao Carrinho</button>
+
+        <div id="listaPecas"></div>
+
+        <div class="input-group">
+            <label for="desconto">Desconto Total (%)</label>
+            <input type="number" id="desconto" placeholder="Ex: 20" step="0.01" min="0" max="100">
+            <span class="erro" id="erroDesconto">Por favor, insira um desconto entre 0 e 100%</span>
         </div>
 
         <div class="input-group">
@@ -236,7 +307,7 @@
         <div class="resultado" id="resultado">
             <h2>📊 Resultado</h2>
             <div class="resultado-item">
-                <span class="resultado-label">Preço Original:</span>
+                <span class="resultado-label">Preço Original Total:</span>
                 <span class="resultado-valor" id="precoOriginal">R$ 0,00</span>
             </div>
             <div class="resultado-item">
@@ -248,15 +319,15 @@
                 <span class="resultado-valor" id="valorDesconto">R$ 0,00</span>
             </div>
             <div class="resultado-item">
-                <span class="resultado-label">Preço Final (unitário):</span>
+                <span class="resultado-label">Preço Final:</span>
                 <span class="resultado-valor" id="precoFinal">R$ 0,00</span>
             </div>
-            <div class="resultado-item" id="totalGeral" style="display: none;">
-                <span class="resultado-label">Total Geral:</span>
-                <span class="resultado-valor" id="valorTotalGeral">R$ 0,00</span>
+            <div class="resultado-item" id="totalGeral">
+                <span class="resultado-label">Total de Peças:</span>
+                <span class="resultado-valor" id="valorTotalGeral">0 peças</span>
             </div>
             <div class="resultado-item" id="lucroInfo" style="display: none;">
-                <span class="resultado-label">Lucro por Peça:</span>
+                <span class="resultado-label">Lucro Total:</span>
                 <span class="resultado-valor" id="valorLucro">R$ 0,00</span>
             </div>
             <div class="resultado-item" id="margemInfo" style="display: none;">
@@ -272,6 +343,8 @@
     </div>
 
     <script>
+        let carrinho = [];
+
         function formatarMoeda(valor) {
             return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
@@ -290,86 +363,122 @@
             }
         }
 
-        function calcular() {
-            const tipoPecaInput = document.getElementById('tipoPeca');
+        function adicionarPeca() {
+            const tipoPecaSelect = document.getElementById('tipoPeca');
             const precoInput = document.getElementById('preco');
-            const descontoInput = document.getElementById('desconto');
             const quantidadeInput = document.getElementById('quantidade');
+
+            const custo = parseFloat(tipoPecaSelect.value);
+            const preco = parseFloat(precoInput.value);
+            const quantidade = parseInt(quantidadeInput.value) || 1;
+            const nomePeca = tipoPecaSelect.options[tipoPecaSelect.selectedIndex].text;
+
+            if (custo === 0 || isNaN(preco) || preco <= 0) {
+                alert('Por favor, selecione uma peça e informe o preço!');
+                return;
+            }
+
+            const peca = {
+                id: Date.now(),
+                nome: nomePeca,
+                custo: custo,
+                preco: preco,
+                quantidade: quantidade
+            };
+
+            carrinho.push(peca);
+            atualizarCarrinho();
+
+            // Limpar campos
+            tipoPecaSelect.value = '0';
+            precoInput.value = '';
+            quantidadeInput.value = '1';
+            custoDisplay.style.display = 'none';
+        }
+
+        function removerPeca(id) {
+            carrinho = carrinho.filter(p => p.id !== id);
+            atualizarCarrinho();
+        }
+
+        function atualizarCarrinho() {
+            const listaPecas = document.getElementById('listaPecas');
+            
+            if (carrinho.length === 0) {
+                listaPecas.innerHTML = '';
+                return;
+            }
+
+            listaPecas.innerHTML = carrinho.map(peca => `
+                <div class="peca-item">
+                    <div class="peca-info">
+                        <div class="peca-nome">${peca.nome}</div>
+                        <div class="peca-detalhes">Qtd: ${peca.quantidade} | Preço unit: ${formatarMoeda(peca.preco)} | Subtotal: ${formatarMoeda(peca.preco * peca.quantidade)}</div>
+                    </div>
+                    <button class="btn-remover" onclick="removerPeca(${peca.id})">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function calcular() {
+            const descontoInput = document.getElementById('desconto');
             const parcelasInput = document.getElementById('parcelas');
-            const erroPreco = document.getElementById('erroPreco');
             const erroDesconto = document.getElementById('erroDesconto');
             
-            erroPreco.style.display = 'none';
             erroDesconto.style.display = 'none';
 
-            const custo = parseFloat(tipoPecaInput.value) || 0;
-            const preco = parseFloat(precoInput.value);
-            const desconto = parseFloat(descontoInput.value);
-            const quantidade = parseInt(quantidadeInput.value) || 1;
+            const desconto = parseFloat(descontoInput.value) || 0;
             const parcelas = parseInt(parcelasInput.value) || 1;
 
-            let valido = true;
-
-            if (isNaN(preco) || preco <= 0) {
-                erroPreco.style.display = 'block';
-                valido = false;
-            }
-
-            if (isNaN(desconto) || desconto < 0 || desconto > 100) {
+            if (desconto < 0 || desconto > 100) {
                 erroDesconto.style.display = 'block';
-                valido = false;
+                return;
             }
 
-            if (!valido) return;
+            if (carrinho.length === 0) {
+                alert('Adicione pelo menos uma peça ao carrinho!');
+                return;
+            }
 
-            const valorDesconto = (preco * desconto) / 100;
-            const precoFinal = preco - valorDesconto;
-            const totalGeral = precoFinal * quantidade;
-            const valorParcela = totalGeral / parcelas;
+            // Calcular totais
+            let precoTotal = 0;
+            let custoTotal = 0;
+            let quantidadeTotal = 0;
 
-            document.getElementById('precoOriginal').textContent = formatarMoeda(preco);
+            carrinho.forEach(peca => {
+                precoTotal += peca.preco * peca.quantidade;
+                custoTotal += peca.custo * peca.quantidade;
+                quantidadeTotal += peca.quantidade;
+            });
+
+            const valorDesconto = (precoTotal * desconto) / 100;
+            const precoFinal = precoTotal - valorDesconto;
+            const valorParcela = precoFinal / parcelas;
+            const lucroTotal = precoFinal - custoTotal;
+            const margemLucro = ((lucroTotal / custoTotal) * 100);
+
+            document.getElementById('precoOriginal').textContent = formatarMoeda(precoTotal);
             document.getElementById('percentualDesconto').textContent = desconto.toFixed(2) + '%';
             document.getElementById('valorDesconto').textContent = formatarMoeda(valorDesconto);
             document.getElementById('precoFinal').textContent = formatarMoeda(precoFinal);
-
-            // Total geral
-            if (quantidade > 1) {
-                document.getElementById('totalGeral').style.display = 'flex';
-                document.getElementById('valorTotalGeral').textContent = `${quantidade} peças = ${formatarMoeda(totalGeral)}`;
-            } else {
-                document.getElementById('totalGeral').style.display = 'none';
-            }
+            document.getElementById('valorTotalGeral').textContent = `${quantidadeTotal} peças`;
 
             // Cálculo de lucro
-            if (custo > 0) {
-                const lucro = precoFinal - custo;
-                const margemLucro = ((lucro / custo) * 100);
-                const lucroTotal = lucro * quantidade;
-                
-                document.getElementById('lucroInfo').style.display = 'flex';
-                document.getElementById('margemInfo').style.display = 'flex';
-                
-                const lucroElemento = document.getElementById('valorLucro');
-                const margemElemento = document.getElementById('percentualMargem');
-                
-                if (quantidade > 1) {
-                    lucroElemento.textContent = `${formatarMoeda(lucro)} (Total: ${formatarMoeda(lucroTotal)})`;
-                } else {
-                    lucroElemento.textContent = formatarMoeda(lucro);
-                }
-                
-                margemElemento.textContent = margemLucro.toFixed(2) + '%';
-                
-                if (lucro >= 0) {
-                    lucroElemento.className = 'resultado-valor lucro-positivo';
-                    margemElemento.className = 'resultado-valor lucro-positivo';
-                } else {
-                    lucroElemento.className = 'resultado-valor lucro-negativo';
-                    margemElemento.className = 'resultado-valor lucro-negativo';
-                }
+            document.getElementById('lucroInfo').style.display = 'flex';
+            document.getElementById('margemInfo').style.display = 'flex';
+            
+            const lucroElemento = document.getElementById('valorLucro');
+            const margemElemento = document.getElementById('percentualMargem');
+            
+            lucroElemento.textContent = formatarMoeda(lucroTotal);
+            margemElemento.textContent = margemLucro.toFixed(2) + '%';
+            
+            if (lucroTotal >= 0) {
+                lucroElemento.className = 'resultado-valor lucro-positivo';
+                margemElemento.className = 'resultado-valor lucro-positivo';
             } else {
-                document.getElementById('lucroInfo').style.display = 'none';
-                document.getElementById('margemInfo').style.display = 'none';
+                lucroElemento.className = 'resultado-valor lucro-negativo';
+                margemElemento.className = 'resultado-valor lucro-negativo';
             }
 
             // Parcelamento
@@ -384,19 +493,20 @@
         }
 
         function limpar() {
+            carrinho = [];
             document.getElementById('tipoPeca').value = '0';
             document.getElementById('custoDisplay').style.display = 'none';
             document.getElementById('preco').value = '';
             document.getElementById('desconto').value = '';
             document.getElementById('quantidade').value = '1';
             document.getElementById('parcelas').value = '1';
+            document.getElementById('listaPecas').innerHTML = '';
             document.getElementById('resultado').classList.remove('show');
-            document.getElementById('erroPreco').style.display = 'none';
             document.getElementById('erroDesconto').style.display = 'none';
         }
 
         document.getElementById('preco').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') calcular();
+            if (e.key === 'Enter') adicionarPeca();
         });
 
         document.getElementById('desconto').addEventListener('keypress', function(e) {
