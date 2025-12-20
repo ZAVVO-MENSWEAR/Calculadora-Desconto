@@ -240,12 +240,40 @@
             margin-bottom: 20px;
         }
 
-        .lista-vazia {
-            text-align: center;
-            color: #999;
+        .detalhes-desconto {
+            background: #e8f4f8;
             padding: 15px;
-            font-style: italic;
-            font-size: 14px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detalhes-desconto h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .item-desconto {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .item-desconto:last-child {
+            border-bottom: none;
+        }
+
+        .item-desconto-label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .item-desconto-valor {
+            color: #333;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -267,6 +295,7 @@
                 <option value="50">Camisa Peruana - R$ 50,00</option>
                 <option value="75">Gola Polo Peruana - R$ 75,00</option>
                 <option value="65">Camisa Malha Pima - R$ 65,00</option>
+                <option value="65">Camisa Six Brothers - R$ 65,00</option>
             </select>
         </div>
 
@@ -341,6 +370,11 @@
             <div class="resultado-item" id="parcelamentoInfo" style="display: none;">
                 <span class="resultado-label">Parcelas:</span>
                 <span class="resultado-valor" id="valorParcela">12x de R$ 0,00</span>
+            </div>
+
+            <div class="detalhes-desconto" id="detalhesDesconto" style="display: none;">
+                <h3>💵 Valor por Peça com Desconto</h3>
+                <div id="listaDetalhesDesconto"></div>
             </div>
         </div>
 
@@ -493,6 +527,24 @@
                 document.getElementById('parcelamentoInfo').style.display = 'none';
             }
 
+            // Mostrar detalhes do desconto por peça
+            const detalhesDesconto = document.getElementById('detalhesDesconto');
+            const listaDetalhesDesconto = document.getElementById('listaDetalhesDesconto');
+            
+            detalhesDesconto.style.display = 'block';
+            
+            listaDetalhesDesconto.innerHTML = carrinho.map(peca => {
+                const precoUnitarioComDesconto = peca.preco * (1 - desconto / 100);
+                const totalPecaComDesconto = precoUnitarioComDesconto * peca.quantidade;
+                
+                return `
+                    <div class="item-desconto">
+                        <span class="item-desconto-label">${peca.nome} (${peca.quantidade}x):</span>
+                        <span class="item-desconto-valor">${formatarMoeda(precoUnitarioComDesconto)} cada = ${formatarMoeda(totalPecaComDesconto)}</span>
+                    </div>
+                `;
+            }).join('');
+
             document.getElementById('resultado').classList.add('show');
         }
 
@@ -507,6 +559,7 @@
             document.getElementById('listaPecas').innerHTML = '';
             document.getElementById('resultado').classList.remove('show');
             document.getElementById('erroDesconto').style.display = 'none';
+            document.getElementById('detalhesDesconto').style.display = 'none';
         }
 
         document.getElementById('preco').addEventListener('keypress', function(e) {
